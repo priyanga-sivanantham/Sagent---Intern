@@ -1,0 +1,23 @@
+version: "3"
+
+services:
+
+  backend:
+    build: .
+    container_name: grocery-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3306/grocerydb
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    restart: always
+
+  frontend:
+    build: ./grocery-frontend
+    container_name: grocery-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: always
