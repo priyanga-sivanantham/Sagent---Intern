@@ -1,0 +1,401 @@
+You are a senior React developer. Build a complete frontend for my Event Planning Web Application.
+
+I want a working React frontend that connects directly to my Spring Boot backend. Build it with clean structure, working API integration, JWT auth, role-based dashboards, and responsive UI.
+
+## Tech Stack
+- React (latest)
+- Vite
+- Axios
+- React Router
+- Tailwind CSS
+- Context API + localStorage for auth
+- No Redux
+- JavaScript only unless absolutely necessary
+
+## Goal
+Build a frontend for an Event Planning App where:
+- organizers create and manage events
+- team members handle assigned work
+- vendors manage their profile and assigned events
+- organizer manages guests, RSVP, budget, vendors, tasks, feedback, and chat
+- team members and vendors can use chat and see relevant event data
+- organizer, vendor, and team member can view feedback for relevant events
+
+## App Theme / Domain
+This is an Event Planning App.
+Core use cases:
+- Event creation
+- Task assignment
+- Budget tracking
+- Vendor management
+- Guest management
+- Collaboration and communication
+- Event-day coordination
+- Post-event feedback
+
+The UI should feel like a practical event operations dashboard, not a generic admin template.
+
+## Backend Base URL
+- `http://localhost:8080`
+
+## Authentication Details
+The backend uses JWT.
+
+Register:
+- `POST /users/register`
+
+Login:
+- `POST /users/login`
+
+Login response is:
+```json
+{
+  "token": "JWT_TOKEN",
+  "tokenType": "Bearer",
+  "expiresInSeconds": 3600,
+  "expiresAt": "2026-03-23T17:25:05Z",
+  "user": {
+    "userId": 1,
+    "name": "Organizer",
+    "email": "organizer@example.com",
+    "phone": "9999999999",
+    "role": "ORGANIZER"
+  }
+}
+```
+
+Also available:
+- `GET /users/me`
+- `POST /users/refresh`
+
+Requirements:
+- Store JWT token in localStorage
+- Store logged-in user in auth context
+- On app load, restore token from localStorage
+- If token exists, call `/users/me`
+- If session is invalid, clear auth and redirect to `/login`
+- Attach `Authorization: Bearer <token>` on protected API calls
+- Handle 401 errors globally
+
+## User Roles
+- `ORGANIZER`
+- `TEAM_MEMBER`
+- `VENDOR`
+
+Use `user.role` for route protection and UI rendering.
+Do not depend only on decoding JWT if backend already gives `user`.
+
+## Routing Requirements
+Create routes:
+- `/login`
+- `/register`
+- `/organizer`
+- `/team-member`
+- `/vendor`
+
+Behavior:
+- If not logged in, protected routes redirect to `/login`
+- If logged in, redirect based on role
+- If a user tries to access another role’s dashboard, redirect to their own dashboard
+
+## Required Pages
+Create at minimum:
+- `Login.jsx`
+- `Register.jsx`
+- `OrganizerDashboard.jsx`
+- `TeamMemberDashboard.jsx`
+- `VendorDashboard.jsx`
+
+Also create reusable layout and auth helpers.
+
+## Suggested Folder Structure
+Use something like:
+- `src/pages/`
+  - `Login.jsx`
+  - `Register.jsx`
+  - `OrganizerDashboard.jsx`
+  - `TeamMemberDashboard.jsx`
+  - `VendorDashboard.jsx`
+- `src/components/`
+  - `Navbar.jsx`
+  - `Sidebar.jsx`
+  - `ProtectedRoute.jsx`
+  - `StatCard.jsx`
+  - `SectionCard.jsx`
+  - `DataTable.jsx`
+  - `Modal.jsx`
+- `src/context/`
+  - `AuthContext.jsx`
+- `src/services/`
+  - `api.js`
+- `src/utils/`
+  - `auth.js`
+- `src/App.jsx`
+- `src/main.jsx`
+
+## Dashboard Requirements
+
+### Organizer Dashboard
+Build real working sections for:
+- Create Event
+- View All Events
+- Assign Team Members
+- Manage Tasks
+- Add/View Vendors
+- Manage Budget
+- View Expenses
+- Manage Guests
+- View Feedback
+- Chat system
+
+### Team Member Dashboard
+Build real working sections for:
+- View assigned events
+- View/manage assigned tasks
+- Add/view vendors if backend allows
+- View feedback for assigned events
+- Chat system
+
+### Vendor Dashboard
+Build real working sections for:
+- Manage vendor profile
+- View assigned events
+- View feedback for assigned events
+- Chat system
+
+## Backend Endpoint Contract
+Use real backend APIs and wire them properly.
+
+### Auth / Users
+- `POST /users/register`
+- `POST /users/login`
+- `POST /users/refresh`
+- `GET /users/me`
+- `GET /users`
+- `POST /users`
+- `GET /users/{id}`
+- `PUT /users/{id}`
+- `DELETE /users/{id}`
+
+User request fields:
+- `name`
+- `email`
+- `password`
+- `phone`
+- `role`
+
+### Events
+- `GET /events`
+- `POST /events`
+- `GET /events/{id}`
+- `PUT /events/{id}`
+- `DELETE /events/{id}`
+
+Event fields:
+- `eventName`
+- `eventDate`
+- `venue`
+
+### Vendors
+- `GET /vendors`
+- `POST /vendors`
+- `GET /vendors/{id}`
+- `PUT /vendors/{id}`
+- `DELETE /vendors/{id}`
+
+Vendor request fields:
+- `vendorName`
+- `serviceType`
+- `contact`
+- `userId`
+
+### Event Team Members
+- `GET /eventteammembers`
+- `POST /eventteammembers`
+- `GET /eventteammembers/{id}`
+- `PUT /eventteammembers/{id}`
+- `DELETE /eventteammembers/{id}`
+
+Request fields:
+- `eventId`
+- `userId`
+- `roleInEvent`
+
+### Event Vendors
+- `GET /eventvendors`
+- `POST /eventvendors/assign?eventId=...&vendorId=...&serviceDetails=...`
+- `DELETE /eventvendors/{id}`
+
+### Tasks
+- `GET /tasks`
+- `POST /tasks/create?eventId=...&teamMemberId=...&vendorId=...`
+- `GET /tasks/{id}`
+- `PUT /tasks/{id}/status?status=...`
+- `DELETE /tasks/{id}`
+
+Task body fields:
+- `taskName`
+- `description`
+
+### Budgets
+- `GET /budgets`
+- `POST /budgets`
+- `GET /budgets/{id}`
+- `PUT /budgets/{id}`
+- `DELETE /budgets/{id}`
+
+Budget fields:
+- `totalBudget`
+- `remainingBudget`
+- `eventId`
+
+### Expenses
+- `GET /expenses`
+- `POST /expenses`
+- `GET /expenses/{id}`
+- `PUT /expenses/{id}`
+- `DELETE /expenses/{id}`
+
+Expense fields:
+- `expenseName`
+- `amount`
+- `description`
+- `budgetId`
+
+### Guests
+- `GET /guests`
+- `POST /guests`
+- `GET /guests/{id}`
+- `PUT /guests/{id}`
+- `DELETE /guests/{id}`
+- `GET /guests/event/{eventId}`
+- `POST /guests/send-invitations/{eventId}`
+- `POST /guests/{eventId}/send-feedback-mail`
+
+Guest fields:
+- `guestName`
+- `email`
+- `phone`
+- `rsvpStatus`
+- `eventId`
+
+RSVP values:
+- `Accepted`
+- `Declined`
+- `Pending`
+
+### Feedback
+- `GET /feedback`
+- `GET /feedback/{id}`
+- `GET /feedback/event/{eventId}`
+- `DELETE /feedback/{id}`
+
+Public feedback flow also exists:
+- `GET /feedback/form?token=...`
+- `POST /feedback/submit`
+
+Feedback submit body:
+```json
+{
+  "token": "TOKEN",
+  "rating": 5,
+  "comments": "Great event"
+}
+```
+
+### Chats
+- `GET /chats`
+- `POST /chats`
+
+Chat fields:
+- `chatName`
+- `chatType`
+- `eventId`
+
+### Chat Participants
+- `GET /chat-participants`
+- `POST /chat-participants`
+- `GET /chat-participants/chat/{chatId}`
+- `DELETE /chat-participants/{id}`
+
+Fields:
+- `chatId`
+- `userId`
+
+### Messages
+- `POST /messages`
+- `GET /messages/chat/{chatId}`
+
+Message fields:
+- `content`
+- `chatId`
+
+## Important Notes About API Responses
+- Do not assume all list endpoints are paginated
+- Some endpoints return arrays directly
+- Some endpoints return paginated objects with:
+```json
+{
+  "items": [],
+  "page": 0,
+  "size": 20,
+  "totalItems": 1,
+  "totalPages": 1
+}
+```
+So build frontend components flexible enough to handle both plain arrays and paginated responses where needed.
+
+## Public Guest Pages
+My backend already has working backend-hosted guest pages:
+- `/invitation.html?token=...`
+- `/feedback.html?token=...`
+
+Do not rebuild those public guest pages unless necessary.
+Focus mainly on the authenticated app frontend for organizer, team member, and vendor.
+
+## UI Requirements
+- Use Tailwind CSS
+- Clean, modern, responsive layout
+- Sidebar + top navbar
+- Cards for summary
+- Tables or list cards for resources
+- Forms and modals for create/update
+- Nice empty states
+- Loading states
+- Error states
+- Avoid overcomplicated UI
+- Make it practical and usable
+
+## Functional Requirements
+- Use reusable components
+- Build a proper auth context
+- Create an axios instance in `services/api.js`
+- Add request interceptor for JWT
+- Add response interceptor for unauthorized cases
+- Use role-based sidebar navigation
+- Use modular sections in each dashboard
+- Do not use fake data if backend endpoints exist
+- Do not invent fields not in backend contract
+
+## Implementation Preference
+Build the project in a way that is actually runnable:
+1. Setup app shell, routing, auth context, axios integration
+2. Implement login/register flow
+3. Implement protected routes and role redirects
+4. Build organizer dashboard with real CRUD sections
+5. Build team member dashboard
+6. Build vendor dashboard
+7. Polish layout and responsiveness
+
+## Output Requirements
+- Provide full React code
+- Separate files clearly
+- Include all routing setup
+- Include API integration
+- Include role-based rendering logic
+- Include Tailwind-based styling
+- Include reusable components
+- Make the code organized and production-clean
+
+Do not give only a rough outline.
+Generate the actual project files and code needed for a working frontend.

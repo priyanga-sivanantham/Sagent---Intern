@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Invitation</title>
+    <style>
+        :root {
+            --bg: #f7f1e8;
+            --card: #fffaf2;
+            --text: #1f1a17;
+            --accent: #bb5a2a;
+            --accent-dark: #8e3f18;
+            --muted: #6f6257;
+            --border: #e7d9c8;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Georgia, "Times New Roman", serif;
+            background:
+                radial-gradient(circle at top right, #f3d6b7, transparent 30%),
+                linear-gradient(160deg, var(--bg), #efe4d7);
+            color: var(--text);
+            display: grid;
+            place-items: center;
+            padding: 24px;
+        }
+        .card {
+            width: min(640px, 100%);
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: 0 18px 40px rgba(77, 46, 24, 0.12);
+            padding: 32px;
+        }
+        h1 {
+            margin: 0 0 12px;
+            font-size: clamp(2rem, 4vw, 3rem);
+            line-height: 1.05;
+        }
+        p {
+            color: var(--muted);
+            line-height: 1.6;
+        }
+        .meta {
+            display: grid;
+            gap: 10px;
+            margin: 24px 0;
+            padding: 18px;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+        }
+        .meta strong {
+            display: inline-block;
+            width: 88px;
+            color: var(--text);
+        }
+        .status {
+            margin: 18px 0 26px;
+            font-weight: 700;
+            color: var(--accent-dark);
+        }
+        .actions {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+        button {
+            border: 0;
+            border-radius: 999px;
+            padding: 14px 16px;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            color: white;
+            background: var(--accent);
+        }
+        button.secondary { background: #7b8b6f; }
+        button.ghost { background: #8b6f6f; }
+        button:disabled { opacity: 0.6; cursor: wait; }
+        .message {
+            margin-top: 18px;
+            min-height: 24px;
+            font-weight: 600;
+        }
+        .error { color: #b42318; }
+        .success { color: #276749; }
+        @media (max-width: 560px) {
+            .actions { grid-template-columns: 1fr; }
+            .card { padding: 24px; }
+        }
+    </style>
+</head>
+<body>
+<main class="card">
+    <p>You are invited</p>
+    <h1 id="eventName">Loading...</h1>
+    <p id="intro">Please wait while we load your invitation.</p>
+
+    <section class="meta" id="details" hidden>
+        <div><strong>Guest</strong><span id="guestName"></span></div>
+        <div><strong>Date</strong><span id="eventDate"></span></div>
+        <div><strong>Venue</strong><span id="venue"></span></div>
+        <div><strong>Email</strong><span id="guestEmail"></span></div>
+    </section>
+
+    <div class="status" id="currentStatus"></div>
+
+    <section class="actions" id="actions" hidden>
+        <button data-status="ACCEPTED">Accept</button>
+        <button class="secondary" data-status="PENDING">Pending</button>
+        <button class="ghost" data-status="DECLINED">Decline</button>
+    </section>
+
+    <div class="message" id="message"></div>
+</main>
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    const messageEl = document.getElementById("message");
+    const buttons = Array.from(document.querySelectorAll("button[data-status]"));
+
+    function setMessage(text, type) {
+        messageEl.textContent = text;
+        messageEl.className = "message " + (type || "");
+    }
+
+    function setButtonsDisabled(disabled) {
+        buttons.forEach((button) => button.disabled = disabled);
+    }
+
+    async function loadInvitation() {
+        if (!token) {
+            setMessage("Invitation token is missing.", "error");
+            document.getElementById("eventName").textContent = "Invalid invitation";
+            return;
+        }
+
+        const response = await fetch(`/guests/invitation?token=${encodeURIComponent(token)}`);
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || "Unable to load invitation");
+        }
+
+        document.getElementById("eventName").textContent = data.eventName;
+        document.getElementById("intro").textContent = "Review the event details and choose your RSVP status.";
+        document.getElementById("guestName").textContent = data.guestName;
+        document.getElementById("eventDate").textContent = data.eventDate;
+        document.getElementById("venue").textContent = data.venue;
+        document.getElementById("guestEmail").textContent = data.guestEmail;
+        document.getElementById("currentStatus").textContent = `Current RSVP: ${data.rsvpStatus}`;
+        document.getElementById("details").hidden = false;
+        document.getElementById("actions").hidden = false;
+    }
+
+    async function updateStatus(status) {
+        setButtonsDisabled(true);
+        setMessage("Saving your RSVP...", "");
+        try {
+            const response = await fetch("/guests/respond", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token, status })
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.message || "Unable to save RSVP");
+            }
+            document.getElementById("currentStatus").textContent = `Current RSVP: ${data.rsvpStatus}`;
+            setMessage("Your RSVP has been recorded successfully.", "success");
+        } catch (error) {
+            setMessage(error.message, "error");
+        } finally {
+            setButtonsDisabled(false);
+        }
+    }
+
+    buttons.forEach((button) => {
+        button.addEventListener("click", () => updateStatus(button.dataset.status));
+    });
+
+    loadInvitation().catch((error) => {
+        document.getElementById("eventName").textContent = "Invitation unavailable";
+        document.getElementById("intro").textContent = "We could not load this invitation.";
+        setMessage(error.message, "error");
+    });
+</script>
+</body>
+</html>
